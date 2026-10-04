@@ -1,0 +1,20 @@
+# Quindi branding, taken from the QuindiTheme palette in
+# ProRob.ProNetManager.Edge/Shared/MainLayout.razor
+[theme]
+base = "light"
+primaryColor = "#04CF88"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F5F9"
+textColor = "#232523"
+font = "Titillium Web:https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap, sans-serif"
+
+# A dark sidebar, like the drawer of the Quindi Edge app, so the white
+# wordmark of the logo is readable.
+[theme.sidebar]
+backgroundColor = "#232523"
+secondaryBackgroundColor = "#2F322F"
+textColor = "#F9FAF9"
+primaryColor = "#04CF88"
+
+[browser]
+gatherUsageStats = false

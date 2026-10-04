@@ -1,0 +1,145 @@
+{
+  "split_date": "2026-05-14",
+  "data_first_day": "2025-12-05",
+  "data_last_day": "2026-07-13",
+  "studied_machines": [
+    1,
+    2,
+    4,
+    6,
+    8,
+    11,
+    12
+  ],
+  "machines": {
+    "1": {
+      "name": "IMV 315 L",
+      "typical_wall_frac": 0.38744311917870267,
+      "studied": true
+    },
+    "2": {
+      "name": "ROSS 315",
+      "typical_wall_frac": 0.1651378907707679,
+      "studied": true
+    },
+    "3": {
+      "name": "BALCONI 200",
+      "typical_wall_frac": 0.1516079942264254,
+      "studied": false
+    },
+    "4": {
+      "name": "IMV 420",
+      "typical_wall_frac": 0.24409225875652685,
+      "studied": true
+    },
+    "5": {
+      "name": "OTI 120",
+      "typical_wall_frac": 0.1458208117962896,
+      "studied": false
+    },
+    "6": {
+      "name": "ZANI 300",
+      "typical_wall_frac": 0.4767799786206154,
+      "studied": true
+    },
+    "7": {
+      "name": "ROSS 315 L",
+      "typical_wall_frac": 0.36071443314937224,
+      "studied": false
+    },
+    "8": {
+      "name": "MANZONI 200",
+      "typical_wall_frac": 0.2625526210578302,
+      "studied": true
+    },
+    "9": {
+      "name": "OTI 315 L",
+      "typical_wall_frac": 0.39343440229117893,
+      "studied": false
+    },
+    "10": {
+      "name": "NUOVA OMEC 700",
+      "typical_wall_frac": 0.4321995536466229,
+      "studied": false
+    },
+    "11": {
+      "name": "INVERNIZZI 120",
+      "typical_wall_frac": 0.13204842042183898,
+      "studied": true
+    },
+    "12": {
+      "name": "INVERNIZZI 160",
+      "typical_wall_frac": 0.17988598961453656,
+      "studied": true
+    }
+  },
+  "features": [
+    "ordered_qty",
+    "plan_work_h",
+    "plan_cycle_s",
+    "plan_setup_h",
+    "priority",
+    "pct_of_ordered",
+    "pieces_done",
+    "remaining_pieces",
+    "worked_h",
+    "obs_cycle_s",
+    "elapsed_wall_h",
+    "wall_work_frac",
+    "waste_rate",
+    "dow",
+    "hour",
+    "art_n_past",
+    "art_cycle_s",
+    "art_med_work_h",
+    "art_plan_bias",
+    "mach_n_past",
+    "mach_cycle_s",
+    "mach_med_work_h",
+    "mach_plan_bias",
+    "alarms_7d",
+    "alarm_h_7d",
+    "alarms_30d",
+    "alarm_h_30d",
+    "obs_vs_plan",
+    "obs_vs_art",
+    "obs_vs_mach",
+    "plan_vs_art",
+    "plan_vs_mach",
+    "est_from_obs_h",
+    "est_from_art_h",
+    "est_from_mach_h",
+    "est_plan_x_mach_bias",
+    "est_plan_x_art_bias",
+    "mes_remaining_h",
+    "wc_id"
+  ],
+  "checkpoints": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "training_rows": 1847,
+  "result": {
+    "test_rows": 680,
+    "test_orders": 73,
+    "mes_error_h": 0.6863400090648181,
+    "ml_error_h": 0.3541825523945257,
+    "mes_error_pct": 11.579386531540452,
+    "ml_error_pct": 7.277382440981995,
+    "mes_median_pct": 7.236625967882114,
+    "ml_median_pct": 3.0664852351281655,
+    "mes_bias_h": -0.6488784324441323,
+    "ml_bias_h": -0.08102646972421798,
+    "win_rate": 73.52941176470588,
+    "plan_too_low": 87.5,
+    "range_coverage": 73.52941176470588
+  }
+}
