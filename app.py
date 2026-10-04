@@ -492,17 +492,75 @@ with tab_running:
 # tab 2: plan a new order (notebook cell 35)
 # ---------------------------------------------------------------------
 with tab_plan:
-    st.markdown('Invent an order and choose how fast it will run compared with the plan. The model '
-                'gives the hours still to come at every checkpoint, as it would for a real order.')
+    st.markdown('Describe an order that has **not started yet**. Before the first piece nobody knows '
+                'how fast it will run, so the answer below uses only what is known in advance: the '
+                'plan, and how this article and this machine really ran in the past.')
     plan_order = order_form('plan')
 
-    speed = st.slider('How fast the run goes compared with the plan  '
-                      '(1.0 = planned speed, 1.2 = 20% slower, 0.9 = faster)',
-                      min_value=0.6, max_value=1.8, value=1.0, step=0.05, key='plan_speed',
-                      help='Each piece takes this many times the planned seconds per piece. The '
-                           'app assumes the speed holds for the whole order, builds the order as it '
-                           'would look at every checkpoint, and asks the model each time. The blue '
-                           'dotted line in the chart is what that speed alone would give.')
+    # --- the answer before production starts: no speed needed ----------
+    start_row = build_live_row(data['history'], plan_order['machine_id'],
+                               plan_order['article_code'], plan_order['ordered_qty'],
+                               plan_order['plan_cycle_s'], plan_order['plan_setup_h'],
+                               plan_order['priority'], plan_order['start'], 0.0, 0.0,
+                               None, 0.0, plan_order['typical_wall_frac'])
+    low, middle, high = predict_range(data['models'], start_row)
+    p10, p50, p90 = float(low[0]), float(middle[0]), float(high[0])
+    plan_whole = float(start_row['mes_remaining_h'].iloc[0])
+
+    st.divider()
+    st.markdown('##### Before the first piece')
+    column_1, column_2, column_3, column_4 = st.columns(4)
+    column_1.metric('Working hours the order will need (most likely)', '%.2f h' % p50,
+                    delta='%+.2f h vs the plan' % (p50 - plan_whole), delta_color='inverse')
+    column_2.metric('Range p10 – p90 (hours)', '%.1f – %.1f' % (p10, p90),
+                    help='%.2f – %.2f h. The real working time should fall inside this range in '
+                         'about 8 orders out of 10.' % (p10, p90))
+    column_3.metric('The MES plan says', '%.2f h' % plan_whole)
+    column_4.metric('Correction to the plan', '× %.2f' % (p50 / max(plan_whole, 0.05)))
+    if cost_per_hour > 0:
+        column_1, column_2, column_3, column_4 = st.columns(4)
+        column_1.metric('Machine cost, model', '€ %s' % format(round(p50 * cost_per_hour), ','),
+                        help='Range: € %s – %s' % (format(round(p10 * cost_per_hour), ','),
+                                                   format(round(p90 * cost_per_hour), ',')))
+        column_2.metric('Machine cost, MES plan', '€ %s' % format(round(plan_whole * cost_per_hour), ','))
+    history_expander(start_row.iloc[0])
+
+    # --- what if: the speed is a scenario, not an input -----------------
+    st.divider()
+    st.markdown('##### What if the order runs faster or slower than planned?')
+
+    planned = data['orders_planned']
+    article_bias = start_row['art_plan_bias'].iloc[0]
+    machine_bias = start_row['mach_plan_bias'].iloc[0]
+    if pd.notna(article_bias):
+        typical_speed = float(article_bias)
+        past_planned = planned[(planned['ar_code'] == plan_order['article_code']) &
+                               (planned['finish'] < plan_order['start'])]
+        speed_source = ('this article: its past %d orders with a plan needed × %.2f the planned '
+                        'time, in the median' % (len(past_planned), typical_speed))
+    elif pd.notna(machine_bias):
+        typical_speed = float(machine_bias)
+        speed_source = ('this machine, because the article has no planned history: the machine\'s '
+                        'past orders needed × %.2f the planned time, in the median' % typical_speed)
+    else:
+        typical_speed = 1.0
+        speed_source = 'the plan itself, because no history is available'
+    slider_default = round(min(max(typical_speed, 0.6), 1.8), 2)
+
+    st.markdown('The speed only becomes known once the order runs. Here you can try a scenario: the '
+                'app imagines the order running at the speed you choose and asks the model what it '
+                'would say at each later checkpoint. The starting value is the speed typical for '
+                '%s.' % speed_source)
+
+    speed = st.slider('Scenario: time per piece compared with the plan  '
+                      '(1.0 = as planned, 1.2 = 20% slower, 0.9 = 10% faster)',
+                      min_value=0.6, max_value=1.8, value=float(slider_default), step=0.01,
+                      key=plan_order['state'] + '_speed',
+                      help='Not something you need to know in advance. It is a what-if: each piece '
+                           'is assumed to take this many times the planned seconds per piece, for '
+                           'the whole order. The blue dotted line in the chart is what that speed '
+                           'alone would give; the green line is what the model would answer. '
+                           'Starting value: the speed typical for %s.' % speed_source)
 
     rows = []
     for checkpoint in CHECKPOINTS:
@@ -536,25 +594,20 @@ with tab_plan:
                                 line=dict(color=PLAN_GREY, dash='dash', width=2), name='MES plan'))
     figure.add_trace(go.Scatter(x=percents, y=simulated['same_speed'], mode='lines+markers',
                                 line=dict(color=SPEED_BLUE, dash='dot', width=2),
-                                name='if the chosen speed holds'))
+                                name='if the scenario speed holds'))
     figure.add_trace(go.Scatter(x=percents, y=simulated['p50'], mode='lines+markers',
                                 line=dict(color=MODEL_GREEN, width=3), name='model (most likely)'))
     figure.update_layout(
-        title='Working hours still to come, at each checkpoint', height=470,
+        title='Working hours still to come, at each checkpoint, in this scenario', height=470,
         margin=dict(l=10, r=10, t=50, b=10), plot_bgcolor='white',
         xaxis=dict(title='share of the ordered pieces already produced', gridcolor='#E4E7EB',
                    ticksuffix='%', dtick=10),
         yaxis=dict(title='hours still to come', gridcolor='#E4E7EB', rangemode='tozero'),
         legend=dict(orientation='h', yanchor='top', y=-0.18, xanchor='left', x=0))
     st.plotly_chart(figure)
-
-    first = simulated.iloc[0]
-    column_1, column_2, column_3 = st.columns(3)
-    column_1.metric('MES plan, whole order', '%.2f h' % first['mes_remaining_h'])
-    column_2.metric('Model before the first piece', '%.2f h' % first['p50'],
-                    delta='%+.2f h vs the plan' % (first['p50'] - first['mes_remaining_h']),
-                    delta_color='inverse')
-    column_3.metric('Range before the first piece (hours)', '%.1f – %.1f' % (first['p10'], first['p90']))
+    st.caption('At 0% the model lines do not depend on the scenario, because nothing has been '
+               'produced yet. From 10% on, the model sees the scenario speed as if it had been '
+               'measured.')
 
     table = pd.DataFrame({
         'checkpoint': labels,
@@ -566,7 +619,6 @@ with tab_plan:
         'correction': (simulated['p50'] / simulated['mes_remaining_h'].clip(lower=0.05)).round(2),
     })
     st.dataframe(table, hide_index=True)
-    history_expander(simulated.iloc[0])
 
 
 # ---------------------------------------------------------------------
